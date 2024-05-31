@@ -1,6 +1,5 @@
 #include <mbed.h>
 #include <threadLvgl.h>
-
 #include "demos/lv_demos.h"
 #include <cstdio>
 
