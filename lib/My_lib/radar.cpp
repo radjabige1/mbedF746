@@ -23,6 +23,7 @@ void create_ui()
 
     // Création de la barre de progression
     progress_bar = lv_bar_create(scr);
+    lv_bar_set_range(progress_bar,0, 60);
     lv_obj_set_size(progress_bar, 200, 20); // Dimensions de la barre de progression
     lv_obj_align(progress_bar, LV_ALIGN_CENTER, 0, -20); // Positionner au centre avec un décalage vers le haut
 
@@ -81,21 +82,21 @@ void update_progress_bar(int dist)
     lv_bar_set_value(progress_bar, dist, LV_ANIM_OFF);
 
     // Changer la couleur de la barre de progression en fonction de la distance
-    if (dist >= 50) 
-    {
-        lv_obj_set_style_bg_color(progress_bar, lv_color_make(0, 255, 0), LV_PART_MAIN); // Vert
-    } 
-    else if (dist <= 10) 
+    if (dist<=10) 
     {
         lv_obj_set_style_bg_color(progress_bar, lv_color_make(255, 0, 0), LV_PART_MAIN); // Rouge
     } 
-    else if (dist <= 20) 
+    else if (dist <= 25) 
     {
         lv_obj_set_style_bg_color(progress_bar, lv_color_make(255, 165, 0), LV_PART_MAIN); // Orange
     } 
-    else 
+    else if (dist <=40 ) 
     {
         lv_obj_set_style_bg_color(progress_bar, lv_color_make(255, 255, 0), LV_PART_MAIN); // Jaune
+    } 
+    else 
+    {
+        lv_obj_set_style_bg_color(progress_bar, lv_color_make(0, 255, 0), LV_PART_MAIN); // Vert
     }
 }
 
@@ -110,29 +111,30 @@ void update_distance_label(int dist)
 // Fonction de gestion du buzzer en fonction de la distance
 void sound_buzzer(int dist)
 {
-    if (dist >= 50) 
-    {
-        buzzer = 0;
-    } 
-    else if (dist <= 10) 
+    if (dist <= 10) 
     {
         buzzer.period(1.0 / 1000.0); // Fréquence de 1 kHz
         buzzer = 0.5; // 50% duty cycle
         ThisThread::sleep_for(50ms);
         buzzer = 0;
-    }
-    else if (dist <= 20) 
+    } 
+    else if (dist <= 25) 
     {
         buzzer.period(1.0 / 1000.0); // Fréquence de 1 kHz
         buzzer = 0.5; // 50% duty cycle
-        ThisThread::sleep_for(150ms);
+        ThisThread::sleep_for(100ms);
         buzzer = 0;
+    }
+    else if (dist <= 40) 
+    {
+        buzzer.period(1.0 / 1000.0); // Fréquence de 1 kHz
+        buzzer = 0.5; // 50% duty cycle
+        ThisThread::sleep_for(200ms);
+        buzzer = 0;
+
     }  
     else 
     {
-        buzzer.period(1.0 / 1000.0); // Fréquence de 1 kHz
-        buzzer = 0.5; // 50% duty cycle
-        ThisThread::sleep_for(500ms);
         buzzer = 0;
     }
 }

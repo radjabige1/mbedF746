@@ -46,6 +46,6 @@ int main()
             update_distance_label(dist);
 
         }
-        ThisThread::sleep_for(50ms);
+        ThisThread::sleep_for(200ms);
     }
 }
