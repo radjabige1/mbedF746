@@ -9,6 +9,8 @@ lv_obj_t *start_btn;
 lv_obj_t *start_label;
 lv_obj_t *stop_btn;
 lv_obj_t *stop_label;
+lv_obj_t *buzzer_switch;
+lv_obj_t *buzzer_label;
 
 // Styles pour la barre de progression
 lv_style_t style_red;
@@ -16,6 +18,11 @@ lv_style_t style_orange;
 lv_style_t style_yellow;
 lv_style_t style_green;
 lv_style_t style_transparent;
+lv_style_t style_switch_on;
+lv_style_t style_switch_off;
+
+// Variable pour contrôler l'état du buzzer
+bool buzzer_enabled = true;
 
 void create_ui()
 {
@@ -40,7 +47,7 @@ void create_ui()
 
     // Création du conteneur pour les boutons
     btn_cont = lv_obj_create(scr);
-    lv_obj_set_size(btn_cont, LV_PCT(100), 70); // Largeur 100% de l'écran, hauteur 70 pixels
+    lv_obj_set_size(btn_cont, LV_PCT(100), 100); // Largeur 100% de l'écran, hauteur 100 pixels
     lv_obj_align(btn_cont, LV_ALIGN_BOTTOM_MID, 0, 0); // Aligner en bas au centre avec un décalage vers le haut
 
     // Ajuster la disposition des boutons
@@ -65,6 +72,16 @@ void create_ui()
     lv_obj_center(stop_label);
     lv_obj_add_event_cb(stop_btn, stop_button_event_handler, LV_EVENT_CLICKED, NULL);
 
+    // Création du switch Buzzer On/Off
+    buzzer_switch = lv_switch_create(btn_cont);
+    lv_obj_set_size(buzzer_switch, 100, 50);
+    lv_obj_add_event_cb(buzzer_switch, buzzer_switch_event_handler, LV_EVENT_VALUE_CHANGED, NULL);
+
+    // Création du label pour le switch
+    buzzer_label = lv_label_create(btn_cont);
+    lv_label_set_text(buzzer_label, "Buzzer On");
+    lv_obj_align_to(buzzer_label, buzzer_switch, LV_ALIGN_OUT_BOTTOM_MID, 0, 10);
+
     // Initialisation des styles
     lv_style_init(&style_red);
     lv_style_set_bg_color(&style_red, lv_color_make(255, 0, 0));
@@ -85,6 +102,14 @@ void create_ui()
     lv_style_init(&style_transparent);
     lv_style_set_bg_opa(&style_transparent, LV_OPA_TRANSP);
 
+    lv_style_init(&style_switch_off);
+    lv_style_set_bg_color(&style_switch_off, lv_color_make(255, 0, 0));
+    lv_style_set_bg_opa(&style_switch_off, LV_OPA_COVER);
+
+    lv_style_init(&style_switch_on);
+    lv_style_set_bg_color(&style_switch_on, lv_color_make(0, 0, 255));
+    lv_style_set_bg_opa(&style_switch_on, LV_OPA_COVER);
+
     // Application du style initial
     lv_obj_add_style(progress_bar, &style_green, LV_PART_INDICATOR);
 }
@@ -102,6 +127,28 @@ void stop_button_event_handler(lv_event_t *e)
     radar_active = false;
     buzzer = 0; // Assurer que le buzzer est éteint quand le radar est arrêté
     printf("Radar stopped\n");
+}
+
+// Fonction de gestion de l'événement du switch Buzzer On/Off
+void buzzer_switch_event_handler(lv_event_t *e)
+{
+    lv_obj_t *sw = lv_event_get_target(e);
+    buzzer_enabled = lv_obj_has_state(sw, LV_STATE_CHECKED);
+
+    if (buzzer_enabled)
+    {
+        lv_label_set_text(buzzer_label, "Buzzer On");
+        lv_obj_add_style(sw, &style_switch_on, 0);
+        lv_obj_remove_style(sw, &style_switch_off, 0);
+    }
+    else
+    {
+        lv_label_set_text(buzzer_label, "Buzzer Off");
+        lv_obj_add_style(sw, &style_switch_off, 0);
+        lv_obj_remove_style(sw, &style_switch_on, 0);
+        buzzer = 0; // Éteindre le buzzer immédiatement
+    }
+    printf("Buzzer %s\n", buzzer_enabled ? "enabled" : "disabled");
 }
 
 // Fonction de mise à jour de la barre de progression en fonction de la distance
@@ -156,10 +203,16 @@ void update_distance_label(int dist)
 // Fonction de gestion du buzzer en fonction de la distance
 void sound_buzzer(int dist)
 {
-    if (dist < 5)
+    if (!buzzer_enabled) 
+    {
+        buzzer = 0;
+        return;
+    }
+
+    if (dist < 5) 
     {
         buzzer = 1;
-    }
+    } 
     else if (dist <= 10) 
     {
         buzzer.period(1.0 / 1000.0); // Fréquence de 1 kHz
@@ -173,7 +226,7 @@ void sound_buzzer(int dist)
         buzzer = 0.5; // 50% duty cycle
         ThisThread::sleep_for(200ms);
         buzzer = 0;
-    }
+    } 
     else if (dist <= 30) 
     {
         buzzer.period(1.0 / 1000.0); // Fréquence de 1 kHz
@@ -181,14 +234,14 @@ void sound_buzzer(int dist)
         ThisThread::sleep_for(400ms);
         buzzer = 0;
     }  
-    else if (dist <= 40)
+    else if (dist <= 40) 
     {
         buzzer.period(1.0 / 1000.0); // Fréquence de 1 kHz
         buzzer = 0.5; // 50% duty cycle
         ThisThread::sleep_for(700ms);
         buzzer = 0;
-    }
-    else
+    } 
+    else 
     {
         buzzer = 0;
     }
