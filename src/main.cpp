@@ -42,9 +42,10 @@ int main()
             dist = (data[0] << 8) + data[1];
             printf("Distance: %d cm\n", dist);
             sound_buzzer(dist);
+            threadLvgl.lock();
             update_progress_bar(dist);
             update_distance_label(dist);
-
+            threadLvgl.unlock();
         }
         ThisThread::sleep_for(200ms);
     }

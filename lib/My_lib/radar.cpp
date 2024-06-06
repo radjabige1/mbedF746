@@ -10,11 +10,17 @@ lv_obj_t * start_label;
 lv_obj_t * stop_btn;
 lv_obj_t * stop_label;
 
-// Initialisation LVGL et création de l'interface utilisateur
+// Styles pour la barre de progression
+lv_style_t style_red;
+lv_style_t style_orange;
+lv_style_t style_yellow;
+lv_style_t style_green;
+lv_style_t style_transparent;
+
 void create_ui()
 {
     // Création de l'écran
-    lv_obj_t * scr = lv_scr_act();
+    lv_obj_t *scr = lv_scr_act();
 
     // Ajout du titre
     title = lv_label_create(scr);
@@ -58,17 +64,39 @@ void create_ui()
     lv_label_set_text(stop_label, "Stop");
     lv_obj_center(stop_label);
     lv_obj_add_event_cb(stop_btn, stop_button_event_handler, LV_EVENT_CLICKED, NULL);
+
+        // Initialisation des styles
+    lv_style_init(&style_red);
+    lv_style_set_bg_color(&style_red, lv_color_make(255, 0, 0));
+    lv_style_set_bg_opa(&style_red, LV_OPA_COVER);
+
+    lv_style_init(&style_orange);
+    lv_style_set_bg_color(&style_orange, lv_color_make(255, 165, 0));
+    lv_style_set_bg_opa(&style_orange, LV_OPA_COVER);
+
+    lv_style_init(&style_yellow);
+    lv_style_set_bg_color(&style_yellow, lv_color_make(255, 255, 0));
+    lv_style_set_bg_opa(&style_yellow, LV_OPA_COVER);
+
+    lv_style_init(&style_green);
+    lv_style_set_bg_color(&style_green, lv_color_make(0, 255, 0));
+    lv_style_set_bg_opa(&style_green, LV_OPA_COVER);
+
+    lv_style_init(&style_transparent);
+    lv_style_set_bg_opa(&style_transparent, LV_OPA_TRANSP);
+
+    // Application du style initial
+    lv_obj_add_style(progress_bar, &style_green, LV_PART_INDICATOR);
 }
 
 // Fonction de gestion de l'événement du bouton Start
-void start_button_event_handler(lv_event_t * e) 
+void start_button_event_handler(lv_event_t *e) 
 {
     radar_active = true;
     printf("Radar started\n");
 }
-
 // Fonction de gestion de l'événement du bouton Stop
-void stop_button_event_handler(lv_event_t * e) 
+void stop_button_event_handler(lv_event_t *e) 
 {
     radar_active = false;
     buzzer = 0; // Assurer que le buzzer est éteint quand le radar est arrêté
@@ -81,27 +109,34 @@ void update_progress_bar(int dist)
     // Mise à jour de la valeur de la barre de progression
     lv_bar_set_value(progress_bar, dist, LV_ANIM_OFF);
 
+    // Supprimer les styles précédents
+    lv_obj_remove_style(progress_bar, NULL, LV_PART_INDICATOR);
+
     // Changer la couleur de la barre de progression en fonction de la distance
-    if (dist<=10) 
+    if (dist <= 10) 
     {
-        lv_obj_set_style_bg_color(progress_bar, lv_color_make(255, 0, 0), LV_PART_MAIN); // Rouge
+        lv_obj_add_style(progress_bar, &style_red, LV_PART_INDICATOR);
     } 
-    else if (dist <= 25) 
+    else if (dist <= 20) 
     {
-        lv_obj_set_style_bg_color(progress_bar, lv_color_make(255, 165, 0), LV_PART_MAIN); // Orange
+        lv_obj_add_style(progress_bar, &style_orange, LV_PART_INDICATOR);
     } 
-    else if (dist <=40 ) 
+    else if (dist <= 30) 
     {
-        lv_obj_set_style_bg_color(progress_bar, lv_color_make(255, 255, 0), LV_PART_MAIN); // Jaune
+        lv_obj_add_style(progress_bar, &style_yellow, LV_PART_INDICATOR);
     } 
-    else 
+    else if(dist<=40)
     {
-        lv_obj_set_style_bg_color(progress_bar, lv_color_make(0, 255, 0), LV_PART_MAIN); // Vert
+        lv_obj_add_style(progress_bar, &style_green, LV_PART_INDICATOR);
+    }
+    else
+    {
+        lv_obj_add_style(progress_bar, &style_transparent, LV_PART_INDICATOR);
     }
 }
 
 // Fonction de mise à jour du texte avec la distance
-void update_distance_label(int dist)
+void update_distance_label(int dist) 
 {
     char buf[32]; // Un tampon pour stocker la chaîne formatée
     sprintf(buf, "L'obstacle se trouve a %d cm", dist); // Formatage de la chaîne avec la distance
@@ -115,26 +150,32 @@ void sound_buzzer(int dist)
     {
         buzzer.period(1.0 / 1000.0); // Fréquence de 1 kHz
         buzzer = 0.5; // 50% duty cycle
-        ThisThread::sleep_for(50ms);
-        buzzer = 0;
-    } 
-    else if (dist <= 25) 
-    {
-        buzzer.period(1.0 / 1000.0); // Fréquence de 1 kHz
-        buzzer = 0.5; // 50% duty cycle
         ThisThread::sleep_for(100ms);
         buzzer = 0;
-    }
-    else if (dist <= 40) 
+    } 
+    else if (dist <= 20) 
     {
         buzzer.period(1.0 / 1000.0); // Fréquence de 1 kHz
         buzzer = 0.5; // 50% duty cycle
         ThisThread::sleep_for(200ms);
         buzzer = 0;
-
-    }  
-    else 
+    }
+    else if (dist <= 30) 
     {
+        buzzer.period(1.0 / 1000.0); // Fréquence de 1 kHz
+        buzzer = 0.5; // 50% duty cycle
+        ThisThread::sleep_for(400ms);
         buzzer = 0;
+    }  
+    else if(dist<=40)
+    {
+        buzzer.period(1.0 / 1000.0); // Fréquence de 1 kHz
+        buzzer = 0.5; // 50% duty cycle
+        ThisThread::sleep_for(700ms);
+        buzzer = 0;
+    }
+    else
+    {
+        buzzer=0;
     }
 }
