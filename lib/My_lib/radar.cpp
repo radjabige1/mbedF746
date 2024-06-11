@@ -1,4 +1,6 @@
 #include "radar.h"
+#include <mbed.h>
+#include <cstdio>
 
 // Déclaration des objets
 lv_obj_t *title;
@@ -11,6 +13,8 @@ lv_obj_t *stop_btn;
 lv_obj_t *stop_label;
 lv_obj_t *buzzer_switch;
 lv_obj_t *buzzer_label;
+lv_obj_t *slider;
+lv_obj_t *adjust_label; // Nouveau label pour afficher l'ajustement
 
 // Styles pour la barre de progression
 lv_style_t style_red;
@@ -21,8 +25,9 @@ lv_style_t style_transparent;
 lv_style_t style_switch_on;
 lv_style_t style_switch_off;
 
-// Variable pour contrôler l'état du buzzer
+// Variables pour contrôler l'état du buzzer et l'ajustement de la distance
 bool buzzer_enabled = true;
+int adjustment = 0; // Variable pour stocker l'ajustement de la distance
 
 void create_ui()
 {
@@ -82,6 +87,11 @@ void create_ui()
     lv_label_set_text(buzzer_label, "Buzzer On");
     lv_obj_align_to(buzzer_label, buzzer_switch, LV_ALIGN_OUT_BOTTOM_MID, 0, 10);
 
+    // Création du label pour afficher l'ajustement
+    adjust_label = lv_label_create(scr);
+    lv_label_set_text(adjust_label, "0 cm");
+    lv_obj_align(adjust_label, LV_ALIGN_LEFT_MID, 50, -50); // Positionner à droite au milieu avec un décalage vers la gauche
+
     // Initialisation des styles
     lv_style_init(&style_red);
     lv_style_set_bg_color(&style_red, lv_color_make(255, 0, 0));
@@ -112,6 +122,13 @@ void create_ui()
 
     // Application du style initial
     lv_obj_add_style(progress_bar, &style_green, LV_PART_INDICATOR);
+
+    // Création du slider pour ajuster les distances d'activation
+    slider = lv_slider_create(scr);
+    lv_obj_set_size(slider, 20, 150); // Dimensions du slider
+    lv_obj_align(slider, LV_ALIGN_LEFT_MID, 20, -50); // Positionner à gauche au milieu avec un décalage vers la droite
+    lv_slider_set_range(slider, 0, 100); // Définir la plage de valeurs du slider
+    lv_obj_add_event_cb(slider, slider_event_handler, LV_EVENT_VALUE_CHANGED, NULL); // Ajouter un gestionnaire d'événements
 }
 
 // Fonction de gestion de l'événement du bouton Start
@@ -151,10 +168,27 @@ void buzzer_switch_event_handler(lv_event_t *e)
     printf("Buzzer %s\n", buzzer_enabled ? "enabled" : "disabled");
 }
 
+// Fonction de gestion de l'événement du slider
+void slider_event_handler(lv_event_t *e)
+{
+    lv_obj_t *slider = lv_event_get_target(e);
+    int slider_value = lv_slider_get_value(slider);
+
+    // Calculer l'ajustement en fonction de la valeur du slider
+    adjustment = slider_value / 20; // Par exemple, si slider_value est de 100, adjustment sera de 5
+
+    // Mettre à jour le label d'ajustement
+    char buf[32];
+    sprintf(buf, "+%d cm", adjustment);
+    lv_label_set_text(adjust_label, buf);
+
+    printf("Slider value: %d, Adjustment: +%d cm\n", slider_value, adjustment);
+}
+
 // Fonction de mise à jour de la barre de progression en fonction de la distance
 void update_progress_bar(int dist)
 {
-    if (dist < 5) 
+    if (dist < 5 + adjustment) 
     {
         lv_bar_set_value(progress_bar, 60, LV_ANIM_OFF); // Remplir complètement la barre de progression
         lv_obj_remove_style(progress_bar, NULL, LV_PART_INDICATOR);
@@ -169,19 +203,19 @@ void update_progress_bar(int dist)
         lv_obj_remove_style(progress_bar, NULL, LV_PART_INDICATOR);
 
         // Changer la couleur de la barre de progression en fonction de la distance
-        if (dist <= 10) 
+        if (dist <= 10 + adjustment) 
         {
             lv_obj_add_style(progress_bar, &style_red, LV_PART_INDICATOR);
         } 
-        else if (dist <= 20) 
+        else if (dist <= 20 + adjustment) 
         {
             lv_obj_add_style(progress_bar, &style_orange, LV_PART_INDICATOR);
         } 
-        else if (dist <= 30) 
+        else if (dist <= 30 + adjustment) 
         {
             lv_obj_add_style(progress_bar, &style_yellow, LV_PART_INDICATOR);
         } 
-        else if (dist <= 40) 
+        else if (dist <= 40 + adjustment) 
         {
             lv_obj_add_style(progress_bar, &style_green, LV_PART_INDICATOR);
         } 
@@ -209,32 +243,32 @@ void sound_buzzer(int dist)
         return;
     }
 
-    if (dist < 5) 
+    if (dist < 5 + adjustment) 
     {
         buzzer = 1;
     } 
-    else if (dist <= 10) 
+    else if (dist <= 10 + adjustment) 
     {
         buzzer.period(1.0 / 1000.0); // Fréquence de 1 kHz
         buzzer = 0.5; // 50% duty cycle
         ThisThread::sleep_for(100ms);
         buzzer = 0;
     } 
-    else if (dist <= 20) 
+    else if (dist <= 20 + adjustment) 
     {
         buzzer.period(1.0 / 1000.0); // Fréquence de 1 kHz
         buzzer = 0.5; // 50% duty cycle
         ThisThread::sleep_for(200ms);
         buzzer = 0;
     } 
-    else if (dist <= 30) 
+    else if (dist <= 30 + adjustment) 
     {
         buzzer.period(1.0 / 1000.0); // Fréquence de 1 kHz
         buzzer = 0.5; // 50% duty cycle
         ThisThread::sleep_for(400ms);
         buzzer = 0;
     }  
-    else if (dist <= 40) 
+    else if (dist <= 40 + adjustment) 
     {
         buzzer.period(1.0 / 1000.0); // Fréquence de 1 kHz
         buzzer = 0.5; // 50% duty cycle
