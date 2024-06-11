@@ -1,34 +1,36 @@
-#include "radar.h"
-#include <mbed.h>
-#include <cstdio>
+// Inclusion des bibliothèques nécessaires
+#include "radar.h" // Bibliothèque spécifique au radar
+#include <mbed.h>  // Bibliothèque pour le microcontrôleur mbed
+#include <cstdio>  // Bibliothèque standard pour les entrées/sorties
 
-// Déclaration des objets
-lv_obj_t *title;
-lv_obj_t *progress_bar;
-lv_obj_t *dist_label;
-lv_obj_t *btn_cont;
-lv_obj_t *start_btn;
-lv_obj_t *start_label;
-lv_obj_t *stop_btn;
-lv_obj_t *stop_label;
-lv_obj_t *buzzer_switch;
-lv_obj_t *buzzer_label;
-lv_obj_t *slider;
-lv_obj_t *adjust_label; // Nouveau label pour afficher l'ajustement
+// Déclaration des objets de l'interface graphique
+lv_obj_t *title;          // Objet pour le titre
+lv_obj_t *progress_bar;   // Objet pour la barre de progression
+lv_obj_t *dist_label;     // Objet pour afficher la distance
+lv_obj_t *btn_cont;       // Conteneur pour les boutons
+lv_obj_t *start_btn;      // Bouton Start
+lv_obj_t *start_label;    // Label pour le bouton Start
+lv_obj_t *stop_btn;       // Bouton Stop
+lv_obj_t *stop_label;     // Label pour le bouton Stop
+lv_obj_t *buzzer_switch;  // Interrupteur pour le buzzer
+lv_obj_t *buzzer_label;   // Label pour l'interrupteur du buzzer
+lv_obj_t *slider;         // Slider pour ajuster les distances d'activation
+lv_obj_t *adjust_label;   // Nouveau label pour afficher l'ajustement
 
-// Styles pour la barre de progression
-lv_style_t style_red;
-lv_style_t style_orange;
-lv_style_t style_yellow;
-lv_style_t style_green;
-lv_style_t style_transparent;
-lv_style_t style_switch_on;
-lv_style_t style_switch_off;
+// Déclaration des styles pour la barre de progression
+lv_style_t style_red;          // Style pour la couleur rouge
+lv_style_t style_orange;       // Style pour la couleur orange
+lv_style_t style_yellow;       // Style pour la couleur jaune
+lv_style_t style_green;        // Style pour la couleur verte
+lv_style_t style_transparent;  // Style pour la transparence
+lv_style_t style_switch_on;    // Style pour l'interrupteur activé
+lv_style_t style_switch_off;   // Style pour l'interrupteur désactivé
 
 // Variables pour contrôler l'état du buzzer et l'ajustement de la distance
-bool buzzer_enabled = true;
-int adjustment = 0; // Variable pour stocker l'ajustement de la distance
+bool buzzer_enabled = true;  // Variable pour savoir si le buzzer est activé
+int adjustment = 0;          // Variable pour stocker l'ajustement de la distance
 
+// Fonction pour créer l'interface utilisateur
 void create_ui()
 {
     // Création de l'écran
@@ -90,7 +92,7 @@ void create_ui()
     // Création du label pour afficher l'ajustement
     adjust_label = lv_label_create(scr);
     lv_label_set_text(adjust_label, "0 cm");
-    lv_obj_align(adjust_label, LV_ALIGN_LEFT_MID, 50, -50); // Positionner à droite au milieu avec un décalage vers la gauche
+    lv_obj_align(adjust_label, LV_ALIGN_LEFT_MID, 50, -50); // Positionner à gauche au milieu avec un décalage vers la gauche
 
     // Initialisation des styles
     lv_style_init(&style_red);
@@ -134,55 +136,55 @@ void create_ui()
 // Fonction de gestion de l'événement du bouton Start
 void start_button_event_handler(lv_event_t *e) 
 {
-    radar_active = true;
-    printf("Radar started\n");
+    radar_active = true; // Activer le radar
+    printf("Radar started\n"); // Imprimer un message indiquant que le radar a démarré
 }
 
 // Fonction de gestion de l'événement du bouton Stop
 void stop_button_event_handler(lv_event_t *e) 
 {
-    radar_active = false;
+    radar_active = false; // Désactiver le radar
     buzzer = 0; // Assurer que le buzzer est éteint quand le radar est arrêté
-    printf("Radar stopped\n");
+    printf("Radar stopped\n"); // Imprimer un message indiquant que le radar a été arrêté
 }
 
 // Fonction de gestion de l'événement du switch Buzzer On/Off
 void buzzer_switch_event_handler(lv_event_t *e)
 {
-    lv_obj_t *sw = lv_event_get_target(e);
-    buzzer_enabled = lv_obj_has_state(sw, LV_STATE_CHECKED);
+    lv_obj_t *sw = lv_event_get_target(e); // Obtenir l'objet cible de l'événement
+    buzzer_enabled = lv_obj_has_state(sw, LV_STATE_CHECKED); // Vérifier si le switch est activé
 
     if (buzzer_enabled)
     {
-        lv_label_set_text(buzzer_label, "Buzzer On");
-        lv_obj_add_style(sw, &style_switch_on, 0);
-        lv_obj_remove_style(sw, &style_switch_off, 0);
+        lv_label_set_text(buzzer_label, "Buzzer On"); // Mettre à jour le label
+        lv_obj_add_style(sw, &style_switch_on, 0); // Appliquer le style pour le switch activé
+        lv_obj_remove_style(sw, &style_switch_off, 0); // Retirer le style pour le switch désactivé
     }
     else
     {
-        lv_label_set_text(buzzer_label, "Buzzer Off");
-        lv_obj_add_style(sw, &style_switch_off, 0);
-        lv_obj_remove_style(sw, &style_switch_on, 0);
+        lv_label_set_text(buzzer_label, "Buzzer Off"); // Mettre à jour le label
+        lv_obj_add_style(sw, &style_switch_off, 0); // Appliquer le style pour le switch désactivé
+        lv_obj_remove_style(sw, &style_switch_on, 0); // Retirer le style pour le switch activé
         buzzer = 0; // Éteindre le buzzer immédiatement
     }
-    printf("Buzzer %s\n", buzzer_enabled ? "enabled" : "disabled");
+    printf("Buzzer %s\n", buzzer_enabled ? "enabled" : "disabled"); // Imprimer l'état du buzzer
 }
 
 // Fonction de gestion de l'événement du slider
 void slider_event_handler(lv_event_t *e)
 {
-    lv_obj_t *slider = lv_event_get_target(e);
-    int slider_value = lv_slider_get_value(slider);
+    lv_obj_t *slider = lv_event_get_target(e); // Obtenir l'objet cible de l'événement
+    int slider_value = lv_slider_get_value(slider); // Obtenir la valeur du slider
 
     // Calculer l'ajustement en fonction de la valeur du slider
     adjustment = slider_value / 20; // Par exemple, si slider_value est de 100, adjustment sera de 5
 
     // Mettre à jour le label d'ajustement
     char buf[32];
-    sprintf(buf, "+%d cm", adjustment);
-    lv_label_set_text(adjust_label, buf);
+    sprintf(buf, "+%d cm", adjustment); // Formatage de la chaîne avec l'ajustement
+    lv_label_set_text(adjust_label, buf); // Mettre à jour le texte du label
 
-    printf("Slider value: %d, Adjustment: +%d cm\n", slider_value, adjustment);
+    printf("Slider value: %d, Adjustment: +%d cm\n", slider_value, adjustment); // Imprimer la valeur du slider et l'ajustement
 }
 
 // Fonction de mise à jour de la barre de progression en fonction de la distance
@@ -191,8 +193,8 @@ void update_progress_bar(int dist)
     if (dist < 5 + adjustment) 
     {
         lv_bar_set_value(progress_bar, 60, LV_ANIM_OFF); // Remplir complètement la barre de progression
-        lv_obj_remove_style(progress_bar, NULL, LV_PART_INDICATOR);
-        lv_obj_add_style(progress_bar, &style_red, LV_PART_INDICATOR);
+        lv_obj_remove_style(progress_bar, NULL, LV_PART_INDICATOR); // Retirer les styles précédents
+        lv_obj_add_style(progress_bar, &style_red, LV_PART_INDICATOR); // Appliquer le style rouge
     } 
     else 
     {
@@ -239,13 +241,13 @@ void sound_buzzer(int dist)
 {
     if (!buzzer_enabled) 
     {
-        buzzer = 0;
+        buzzer = 0; // Éteindre le buzzer si désactivé
         return;
     }
 
     if (dist < 5 + adjustment) 
     {
-        buzzer = 1;
+        buzzer = 1; // Activer le buzzer en continu
     } 
     else if (dist <= 10 + adjustment) 
     {
@@ -277,6 +279,6 @@ void sound_buzzer(int dist)
     } 
     else 
     {
-        buzzer = 0;
+        buzzer = 0; // Éteindre le buzzer si la distance est supérieure à 40 cm
     }
 }

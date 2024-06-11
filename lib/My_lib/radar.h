@@ -23,7 +23,7 @@ void start_button_event_handler(lv_event_t * e);
 void stop_button_event_handler(lv_event_t * e);
 void update_progress_bar(int dist);
 void sound_buzzer(int dist);
-void update_distance_label(int dist); // Nouvelle fonction pour mettre à jour le texte avec la distance
+void update_distance_label(int dist); 
 void buzzer_switch_event_handler(lv_event_t *e);
 void slider_event_handler(lv_event_t *e);
 #endif // RADAR_H
